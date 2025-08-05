@@ -1,0 +1,154 @@
+\<!DOCTYPE html\>
+\<html\>
+\<head\>
+  \<title\>Podcast App\</title\>
+  \\<meta charset="UTF-8"\\>
+  \\<meta name="viewport" content="width=device-width, initial-scale=1.0"\\>
+  \<style\>
+    /* CSS-Regeln */
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #abgehackte-namen {
+      background-color: #f0f0f0;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    #abgehackte-namen h2 {
+      margin-top: 0;
+    }
+    #abgehackte-namen ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #abgehackte-namen li {
+      padding: 5px;
+      border-bottom: 1px solid #ccc;
+    }
+  \</style\>
+\</head\>
+\<body\>
+  \<h1\>Podcast App\</h1\>
+  \<p\>Willkommen bei der Podcast App!\</p\>
+  \<button id="button"\>Klicken Sie hier\</button\>
+  \<div id="abgehackte-namen"\>
+    \<h2\>Abgehackte Namen:\</h2\>
+    \<ul id="abgehackte-namen-liste"\>
+    \</ul\>
+  \</div\>
+  \<script\>
+    // JavaScript-Code
+    let abgehackteNamen = [];
+    let currentIndex = 0;
+    let currentWeek = new Date();
+    currentWeek.setDate(currentWeek.getDate() - currentWeek.getDay() + 1);
+
+    function abhacken(name) {
+      abgehackteNamen.push({ name: name, datum: currentWeek.toLocaleDateString() });
+      document.getElementById("abgehackte-namen-liste").innerHTML += `\<li\>${name} (${currentWeek.toLocaleDateString()})\</li\>`;
+    }
+
+    function skipCurrentWeek() {
+      if (abgehackteNamen.length > 0) {
+        const nextWeek = new Date(currentWeek);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        currentIndex = 0;
+        currentWeek = nextWeek;
+        saveData();
+        updateDisplay();
+      }
+    }
+
+    function postponePerson(index) {
+      if (index === currentIndex && abgehackteNamen.length > 1) {
+        // Aktuelle Person ans Ende verschieben
+        const person = abgehackteNamen.splice(currentIndex, 1)[0];
+        abgehackteNamen.push(person);
+        
+        // Index bleibt gleich, da die nächste Person jetzt an der aktuellen Position ist
+        if (currentIndex >= abgehackteNamen.length) {
+          currentIndex = 0;
+        }
+        
+        saveData();
+        updateDisplay();
+      }
+    }
+
+    function clearAll() {
+      if (confirm('Möchten Sie wirklich alle Namen löschen?')) {
+        abgehackteNamen = [];
+        currentIndex = 0;
+        saveData();
+        updateDisplay();
+      }
+    }
+
+    function updateDisplay() {
+      const abgehackteNamenListe = document.getElementById("abgehackte-namen-liste");
+      abgehackteNamenListe.innerHTML = '';
+      abgehackteNamen.forEach((person, index) => {
+        const isCurrent = index === currentIndex;
+        abgehackteNamenListe.innerHTML += `
+          \<li ${isCurrent ? 'class="current"' : ''}\>${person.name} (${person.datum})\</li\>
+        `;
+      });
+    }
+
+    function saveData() {
+      const data = {
+        abgehackteNamen: abgehackteNamen,
+        currentIndex: currentIndex,
+        currentWeek: currentWeek.toISOString()
+      };
+      
+      try {
+        const jsonData = JSON.stringify(data);
+        document.cookie = `podcastData=${encodeURIComponent(jsonData)}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/`;
+      } catch (e) {
+        console.log('Daten konnten nicht gespeichert werden');
+      }
+    }
+
+    function loadData() {
+      try {
+        const cookies = document.cookie.split(';');
+        const podcastCookie = cookies.find(cookie => cookie.trim().startsWith('podcastData='));
+        
+        if (podcastCookie) {
+          const jsonData = decodeURIComponent(podcastCookie.split('=')[1]);
+          const data = JSON.parse(jsonData);
+          
+          abgehackteNamen = data.abgehackteNamen || [];
+          currentIndex = data.currentIndex || 0;
+          currentWeek = new Date(data.currentWeek);
+          
+          // Index korrigieren falls nötig
+          if (currentIndex >= abgehackteNamen.length) {
+            currentIndex = 0;
+          }
+        }
+      } catch (e) {
+        console.log('Daten konnten nicht geladen werden');
+        abgehackteNamen = [];
+        currentIndex = 0;
+        currentWeek = new Date();
+        currentWeek.setDate(currentWeek.getDate() - currentWeek.getDay() + 1);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadData();
+      updateDisplay();
+    });
+
+    document.getElementById("button").addEventListener("click", function() {
+      let name = prompt("Bitte geben Sie den Namen ein, den Sie abhacken möchten:");
+      if (name !== null) {
+        abhacken(name);
+      }
+    });
+  \</script\>
+\</body\>
+\</html\>
